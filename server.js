@@ -10,8 +10,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+/* ===== MIDDLEWARE ===== */
 app.use(express.json());
-app.use(express.static("public"));
 
 /* ===== FILE STORAGE ===== */
 const filePath = path.join(__dirname, "messages.json");
@@ -27,21 +27,31 @@ try {
   console.log("Read error:", err);
 }
 
-/* ===== USERS (IN MEMORY) ===== */
+/* ===== USERS ===== */
 let users = {};
 
 /* ===== REGISTER ===== */
 app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  if (users[username]) {
-    return res.json({ success: false, message: "User exists" });
+    if (!username || !password) {
+      return res.json({ success: false, message: "Missing fields" });
+    }
+
+    if (users[username]) {
+      return res.json({ success: false, message: "User exists" });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    users[username] = hashed;
+
+    res.json({ success: true, message: "Registered successfully" });
+
+  } catch (err) {
+    console.log("Register error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
-
-  const hashed = await bcrypt.hash(password, 10);
-  users[username] = hashed;
-
-  res.json({ success: true });
 });
 
 /* ===== LOGIN ===== */
@@ -57,6 +67,14 @@ app.post("/login", async (req, res) => {
   const token = jwt.sign({ username }, "secret123");
   res.json({ success: true, token, username });
 });
+
+/* ✅ ROOT ROUTE (IMPORTANT) */
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+/* ✅ STATIC MUST BE AFTER ROUTES */
+app.use(express.static("public"));
 
 /* ===== SOCKET AUTH ===== */
 io.use((socket, next) => {
@@ -75,7 +93,6 @@ io.use((socket, next) => {
 io.on("connection", (socket) => {
   console.log("User connected:", socket.user.username);
 
-  // Send old messages
   socket.emit("loadMessages", messages);
 
   socket.on("chatMessage", (msg) => {
