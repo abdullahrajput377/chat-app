@@ -14,17 +14,26 @@
 
 <script>
 async function register() {
-  const res = await fetch(window.location.origin + "/register", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
-  });
+  try {
+    const res = await fetch(window.location.origin + "/register", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        username: username.value,
+        password: password.value
+      })
+    });
 
-  const data = await res.json();
-  msg.innerText = data.message || "Registered!";
+    const text = await res.text(); // 👈 read raw response
+    console.log("RAW RESPONSE:", text);
+
+    const data = JSON.parse(text); // 👈 manually parse
+
+    msg.innerText = data.message || "Registered!";
+  } catch (err) {
+    console.error("ERROR:", err);
+    msg.innerText = "Something went wrong";
+  }
 }
 
 async function login() {
