@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Chat Room</h2>
+
+<ul id="messages"></ul>
+
+<form id="form">
+  <input id="input" placeholder="Type message..." autocomplete="off">
+  <button>Send</button>
+</form>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+const token = localStorage.getItem("token");
+
+if (!token) {
+  window.location = "login.html";
+}
+const socket = io(window.location.origin, {
+  auth: { token }
+});
+
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const messages = document.getElementById("messages");
+
+// Load old messages
+socket.on("loadMessages", (msgs) => {
+  msgs.forEach(msg => {
+    const li = document.createElement("li");
+    li.textContent = msg;
+    messages.appendChild(li);
+  });
+});
+
+// Send message
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (input.value) {
+    socket.emit("chatMessage", input.value);
+    input.value = "";
+  }
+});
+
+// Receive message
+socket.on("message", (msg) => {
+  const li = document.createElement("li");
+  li.textContent = msg;
+  messages.appendChild(li);
+});
+</script>
+
+</body>
+</html>     
