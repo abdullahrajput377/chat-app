@@ -11,69 +11,58 @@
 <button onclick="login()">Login</button>
 
 <p id="msg"></p>
-
 <script>
-  const BASE_URL = window.location.origin;
+const BASE_URL = window.location.origin;
 
-async function register() {
-  const res = await fetch(`${BASE_URL}/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
-  });
-
-  const data = await res.json();
-  msg.innerText = data.message || "Registered!";
-}
 async function register() {
   try {
-    const res = await fetch(window.location.origin + "/register", {
+    const res = await fetch(`${BASE_URL}/register`, {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         username: username.value,
         password: password.value
       })
     });
 
-    const text = await res.text(); // 👈 read raw response
-    console.log("RAW RESPONSE:", text);
-
-    const data = JSON.parse(text); // 👈 manually parse
-
+    const data = await res.json();
     msg.innerText = data.message || "Registered!";
   } catch (err) {
-    console.error("ERROR:", err);
+    console.error(err);
     msg.innerText = "Something went wrong";
   }
 }
 
 async function login() {
-  const res = await fetch("/login", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
-  });
+  try {
+    const res = await fetch(`${BASE_URL}/login`, {   // ✅ FIXED HERE
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username: username.value,
+        password: password.value
+      })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (data.success) {
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("username", data.username);
-    window.location = "chat.html";
-  } else {
-    msg.innerText = "Login failed";
+    if (data.success) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("username", data.username);
+      window.location = "chat.html";
+    } else {
+      msg.innerText = "Login failed";
+    }
+
+  } catch (err) {
+    console.error(err);
+    msg.innerText = "Something went wrong";
   }
 }
 </script>
-
 </body>
 </html>

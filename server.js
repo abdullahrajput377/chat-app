@@ -32,9 +32,9 @@ let users = {};
 
 /* ===== REGISTER ===== */
 app.post("/register", async (req, res) => {
-  try {
-    const { username, password } = req.body;
+  console.log("REGISTER HIT");
 
+  const { username, password } = req.body;
     if (!username || !password) {
       return res.json({ success: false, message: "Missing fields" });
     }
@@ -74,7 +74,9 @@ app.get("/", (req, res) => {
 });
 
 /* ✅ STATIC MUST BE AFTER ROUTES */
-app.use(express.static("public"));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
 
 /* ===== SOCKET AUTH ===== */
 io.use((socket, next) => {
