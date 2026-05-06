@@ -12,6 +12,12 @@ const io = new Server(server);
 
 /* ===== MIDDLEWARE ===== */
 app.use(express.json());
+app.use(express.static("public")); // ✅ IMPORTANT
+
+/* ===== ROOT ROUTE ===== */
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
 
 /* ===== FILE STORAGE ===== */
 const filePath = path.join(__dirname, "messages.json");
@@ -34,7 +40,9 @@ let users = {};
 app.post("/register", async (req, res) => {
   console.log("REGISTER HIT");
 
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
+
     if (!username || !password) {
       return res.json({ success: false, message: "Missing fields" });
     }
@@ -56,26 +64,23 @@ app.post("/register", async (req, res) => {
 
 /* ===== LOGIN ===== */
 app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  const user = users[username];
-  if (!user) return res.json({ success: false });
+    const user = users[username];
+    if (!user) return res.json({ success: false });
 
-  const valid = await bcrypt.compare(password, user);
-  if (!valid) return res.json({ success: false });
+    const valid = await bcrypt.compare(password, user);
+    if (!valid) return res.json({ success: false });
 
-  const token = jwt.sign({ username }, "secret123");
-  res.json({ success: true, token, username });
-});
+    const token = jwt.sign({ username }, "secret123");
 
-/* ✅ ROOT ROUTE (IMPORTANT) */
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
+    res.json({ success: true, token, username });
 
-/* ✅ STATIC MUST BE AFTER ROUTES */
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+  } catch (err) {
+    console.log("Login error:", err);
+    res.status(500).json({ success: false });
+  }
 });
 
 /* ===== SOCKET AUTH ===== */
@@ -104,7 +109,6 @@ io.on("connection", (socket) => {
 
     try {
       fs.writeFileSync(filePath, JSON.stringify(messages, null, 2));
-      console.log("Saved:", fullMsg);
     } catch (err) {
       console.log("Save error:", err);
     }
@@ -118,4 +122,4 @@ const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
   console.log("Server running on port " + PORT);
-} );
+});
